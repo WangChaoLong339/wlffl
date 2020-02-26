@@ -10,4 +10,8 @@ cc.Class({
     btnStartGame: function () {
         cc.director.loadScene('Game')
     },
+
+    btnExitGame: function () {
+        cc.director.end()
+    },
 });

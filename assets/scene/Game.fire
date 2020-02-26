@@ -404,7 +404,7 @@
     "_actualFontSize": 40,
     "_fontSize": 40,
     "_lineHeight": 60,
-    "_enableWrapText": false,
+    "_enableWrapText": true,
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
@@ -605,17 +605,17 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 684,
-      "height": 86
+      "width": 690,
+      "height": 172
     },
     "_rotationX": 0,
     "_rotationY": 0,
-    "_scaleX": 1,
-    "_scaleY": 1,
+    "_scaleX": 0.85,
+    "_scaleY": 0.85,
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 467
+      "y": 557
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -634,8 +634,8 @@
     "_enabled": true,
     "_layoutSize": {
       "__type__": "cc.Size",
-      "width": 684,
-      "height": 86
+      "width": 690,
+      "height": 172
     },
     "_resize": 1,
     "_N$layoutType": 3,
@@ -665,11 +665,11 @@
     "_enabled": true,
     "isAlignOnce": true,
     "_target": null,
-    "_alignFlags": 45,
-    "_left": 33,
-    "_right": 33,
-    "_top": 200,
-    "_bottom": 1048,
+    "_alignFlags": 1,
+    "_left": 275,
+    "_right": 275,
+    "_top": 110,
+    "_bottom": 984,
     "_verticalCenter": 0,
     "_horizontalCenter": 0,
     "_isAbsLeft": true,
