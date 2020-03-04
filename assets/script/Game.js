@@ -4,12 +4,20 @@ cc.Class({
     properties: {
         layout: cc.Node,
         card: cc.Prefab,
+        particle: cc.Node,
     },
 
     onLoad: function () {
         this.cardType = ['w', 't', 's']
-        this.select = []
+        this.setGameView()
         this.createCard()
+    },
+
+    setGameView: function () {
+        let lineCount = 9
+        let gameViewWidth = this.layout.width
+        let cardWidth = gameViewWidth / lineCount
+        this.scaling = cardWidth / this.card.data.width
     },
 
     createCard: function () {
@@ -21,6 +29,11 @@ cc.Class({
                 }
             }
         }
+        this.startGame()
+    },
+
+    startGame: function () {
+        this.select = []
         this.randomCards()
         this.createPrefab()
         // test code
@@ -55,6 +68,8 @@ cc.Class({
             card.val = this.cards[i]
             card.idx = i
             card.on(cc.Node.EventType.TOUCH_END, this.touchEnd.bind(this), this)
+            card.width = parseInt(card.width * this.scaling)
+            card.height = parseInt(card.height * this.scaling)
             this.layout.addChild(card)
         }
     },
@@ -90,12 +105,33 @@ cc.Class({
                 this.layout.children[this.select[0]].val = null
                 this.layout.children[this.select[1]].val = null
                 this.showCards()
+                if (this.gameOver()) {
+                    //
+                    this.particle.active = true
+                    this.node.runAction(cc.sequence(
+                        cc.delayTime(3),
+                        cc.callFunc(() => {
+                            this.particle.active = false
+                            this.startGame()
+                        }),
+                    ))
+                    return
+                }
             } else {
                 this.errAction()
             }
             this.select = []
         }
         this.selectAction()
+    },
+
+    gameOver: function () {
+        for (var i = 0; i < this.layout.children.length; i++) {
+            if (this.layout.children[i].val != null) {
+                return false
+            }
+        }
+        return true
     },
 
     selectAction: function () {
