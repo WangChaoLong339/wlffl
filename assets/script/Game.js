@@ -1,3 +1,11 @@
+const State = {
+    DeadCycle: 0,
+    Continue: 1,
+    GameOver: 2,
+}
+
+const LineCount = 9
+
 cc.Class({
     extends: cc.Component,
 
@@ -5,18 +13,22 @@ cc.Class({
         layout: cc.Node,
         card: cc.Prefab,
         particle: cc.Node,
+        prop: cc.Node,
+        startCd: cc.Node,
+        timer: cc.Node,
     },
 
     onLoad: function () {
         this.cardType = ['w', 't', 's']
         this.setGameView()
         this.createCard()
+        this.startGame()
+        window.aaa = this
     },
 
     setGameView: function () {
-        let lineCount = 9
         let gameViewWidth = this.layout.width
-        let cardWidth = gameViewWidth / lineCount
+        let cardWidth = gameViewWidth / LineCount
         this.scaling = cardWidth / this.card.data.width
     },
 
@@ -29,22 +41,32 @@ cc.Class({
                 }
             }
         }
-        this.startGame()
     },
 
     startGame: function () {
         this.select = []
+        this.timerVal = 0
+        this.hideProp()
         this.randomCards()
         this.createPrefab()
-        // test code
-        this.showCards()
-        return
         this.hideCards()
-        this.node.runAction(cc.sequence(
-            cc.delayTime(3),
+
+        this.startCd.getComponent(cc.Label).string = ''
+        this.startCd.stopAllActions()
+        this.startCd.runAction(cc.sequence(
+            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '3' }),
+            cc.delayTime(1),
+            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '2' }),
+            cc.delayTime(1),
+            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '1' }),
+            cc.delayTime(1),
+            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '0' }),
+            cc.delayTime(1),
             cc.callFunc(() => {
+                this.startCd.getComponent(cc.Label).string = ''
+                this.runTimer()
                 this.showCards()
-            })
+            }),
         ))
     },
 
@@ -74,12 +96,33 @@ cc.Class({
         }
     },
 
+    showProp: function () {
+        this.prop.active = true
+    },
+
+    hideProp: function () {
+        this.prop.active = false
+    },
+
     hideCards: function () {
         for (var i = 0; i < this.layout.children.length; i++) {
             let card = this.layout.children[i]
             card.PathChild('cardHide').active = true
             card.PathChild('cardShow').active = false
         }
+    },
+
+    runTimer: function () {
+        this.timer.getComponent(cc.Label).string = `${this.timerVal}s`
+        this.timer.stopAllActions()
+        this.timer.runAction(cc.sequence(
+            cc.delayTime(1),
+            cc.callFunc(() => { this.timerVal++; this.runTimer() }),
+        ))
+    },
+
+    stopTimer: function () {
+        this.timer.stopAllActions()
     },
 
     showCards: function () {
@@ -96,26 +139,31 @@ cc.Class({
     },
 
     touchEnd: function (event) {
+        // 是空白牌 || 已经选中
         if (this.layout.children[event.target.idx].val == null || this.select.indexOf(event.target.idx) != -1) {
             return
         }
         this.select.push(event.target.idx)
         if (this.select.length == 2) {
-            if (this.layout.children[this.select[0]].val == this.layout.children[this.select[1]].val && this.check()) {
+            if (this.check()) {
                 this.layout.children[this.select[0]].val = null
                 this.layout.children[this.select[1]].val = null
                 this.showCards()
-                if (this.gameOver()) {
-                    //
-                    this.particle.active = true
-                    this.node.runAction(cc.sequence(
-                        cc.delayTime(3),
-                        cc.callFunc(() => {
-                            this.particle.active = false
-                            this.startGame()
-                        }),
-                    ))
-                    return
+
+                switch (this.gameOver()) {
+                    case State.GameOver:
+                        this.stopTimer()
+                        this.cacheResult()
+                        this.particle.active = true
+                        this.node.runAction(cc.sequence(
+                            cc.delayTime(5),
+                            cc.callFunc(() => { this.particle.active = false; this.startGame() }),
+                        ))
+                        return
+                    case State.DeadCycle:
+                        this.stopTimer()
+                        this.showProp()
+                        return
                 }
             } else {
                 this.errAction()
@@ -125,13 +173,29 @@ cc.Class({
         this.selectAction()
     },
 
+    cacheResult: function () {
+        let recordData = GetLocalStorage('wlffl-record') || []
+        recordData.push({ consume: this.timerVal, date: new Date().Format('yyyy-mm-dd') })
+        recordData.sort((a, b) => { return a.consume - b.consume })
+        while (recordData.length > 30) {
+            recordData.pop()
+        }
+        SetLocalStorage('wlffl-record', recordData)
+    },
+
+    /**
+     * @returns State
+     * 0: 不能继续消除
+     * 1: 还有牌
+     * 2: 结束
+     */
     gameOver: function () {
         for (var i = 0; i < this.layout.children.length; i++) {
             if (this.layout.children[i].val != null) {
-                return false
+                return State.Continue
             }
         }
-        return true
+        return State.GameOver
     },
 
     selectAction: function () {
@@ -157,10 +221,49 @@ cc.Class({
     },
 
     check: function () {
+        let select0 = this.layout.children[this.select[0]]
+        let select1 = this.layout.children[this.select[1]]
+        // 点击了不同的牌
+        if (select0.val != select1.val) {
+            return false
+        }
+        // 相邻牌
+        if (Math.abs(select0.idx - select1.idx) == LineCount) {
+            return true
+        }
+        // 至少一边通畅
+        if ((this.checkUp(select0.idx) || this.checkDown(select0.idx)) && (this.checkUp(select1.idx) || this.checkDown(select1.idx))) {
+            return true
+        }
+        return false
+    },
+
+    // 检查上面是否通畅
+    checkUp: function (idx) {
         let result = true
-        let idx0 = this.layout.children[this.select[0]]
-        let idx1 = this.layout.children[this.select[1]]
+        for (let i = idx - LineCount; i >= 0; i -= LineCount) {
+            if (this.layout.children[i] && this.layout.children[i].val != null) {
+                result = false
+                break
+            }
+        }
         return result
+    },
+
+    // 检查下面是否通畅
+    checkDown: function (idx) {
+        let result = true
+        for (let i = idx + LineCount; i < this.layout.children.length; i += LineCount) {
+            if (this.layout.children[i] && this.layout.children[i].val != null) {
+                result = false
+                break
+            }
+        }
+        return result
+    },
+
+    btnRestart: function () {
+        this.startGame()
     },
 
     btnReturn: function () {
