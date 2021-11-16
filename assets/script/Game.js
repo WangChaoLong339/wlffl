@@ -66,6 +66,7 @@ cc.Class({
                 this.startCd.getComponent(cc.Label).string = ''
                 this.runTimer()
                 this.showCards()
+                this.setupBorderCardIdx()
             }),
         ))
     },
@@ -138,6 +139,28 @@ cc.Class({
         }
     },
 
+    setupBorderCardIdx: function () {
+        this.borderCardIdx = []
+        for (let i = 0; i < LineCount; i++) {
+            // 上边界
+            for (let m = i; m < this.layout.children.length; m += LineCount) {
+                let card = this.layout.children[m]
+                if (card.val != null && this.borderCardIdx.indexOf(card.idx) == -1) {
+                    this.borderCardIdx.push(card.idx)
+                    break
+                }
+            }
+            // 下边界
+            for (let n = this.layout.children.length - LineCount + i; n >= 0; n -= LineCount) {
+                let card = this.layout.children[n]
+                if (card.val != null && this.borderCardIdx.indexOf(card.idx) == -1) {
+                    this.borderCardIdx.push(card.idx)
+                    break
+                }
+            }
+        }
+    },
+
     touchEnd: function (event) {
         // 是空白牌 || 已经选中
         if (this.layout.children[event.target.idx].val == null || this.select.indexOf(event.target.idx) != -1) {
@@ -149,6 +172,7 @@ cc.Class({
                 this.layout.children[this.select[0]].val = null
                 this.layout.children[this.select[1]].val = null
                 this.showCards()
+                this.setupBorderCardIdx()
 
                 switch (this.gameOver()) {
                     case State.GameOver:
@@ -192,10 +216,23 @@ cc.Class({
     gameOver: function () {
         for (var i = 0; i < this.layout.children.length; i++) {
             if (this.layout.children[i].val != null) {
+                // 无解
+                if (this.deadCycle()) { return State.DeadCycle }
                 return State.Continue
             }
         }
         return State.GameOver
+    },
+
+    deadCycle: function () {
+        for (let i = 0; i < this.borderCardIdx.length - 1; i++) {
+            for (let j = i + 1; j < this.borderCardIdx.length; j++) {
+                if (this.cards[this.borderCardIdx[i]] == this.cards[this.borderCardIdx[j]]) {
+                    return false
+                }
+            }
+        }
+        return true
     },
 
     selectAction: function () {
@@ -227,12 +264,12 @@ cc.Class({
         if (select0.val != select1.val) {
             return false
         }
-        // 相邻牌
-        if (Math.abs(select0.idx - select1.idx) == LineCount) {
-            return true
-        }
         // 至少一边通畅
         if ((this.checkUp(select0.idx) || this.checkDown(select0.idx)) && (this.checkUp(select1.idx) || this.checkDown(select1.idx))) {
+            return true
+        }
+        // 相邻牌
+        if (Math.abs(select0.idx - select1.idx) == LineCount && (this.checkUp(select0.idx) || this.checkDown(select0.idx) || this.checkUp(select1.idx) || this.checkDown(select1.idx))) {
             return true
         }
         return false
