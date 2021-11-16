@@ -80,6 +80,21 @@ cc.Class({
                 this.cards[r] = v
             }
         }
+        return
+        this.cards = [
+            'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9',
+            'w1', 'w9', 'w4', 'w3', 'w6', 'w5', 'w8', 'w7', 'w2',
+            'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9',
+            'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9',
+            't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9',
+            't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9',
+            't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9',
+            't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9',
+            's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9',
+            's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9',
+            's2', 's1', 's4', 's3', 's6', 's5', 's8', 's7', 's9',
+            's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9',
+        ]
     },
 
     createPrefab: function () {
@@ -134,6 +149,7 @@ cc.Class({
                 card.PathChild('cardShow').active = false
             } else {
                 SetSpriteFrame(`val/${card.val}`, card.PathChild('cardShow/val', cc.Sprite))
+                card.PathChild('arrow').active = false
                 card.PathChild('cardShow').active = true
             }
         }
@@ -169,8 +185,12 @@ cc.Class({
         this.select.push(event.target.idx)
         if (this.select.length == 2) {
             if (this.check()) {
-                this.layout.children[this.select[0]].val = null
-                this.layout.children[this.select[1]].val = null
+                let card0 = this.layout.children[this.select[0]]
+                let card1 = this.layout.children[this.select[1]]
+                card0.val = null
+                card1.val = null
+                card0.PathChild('arrow').active = false
+                card1.PathChild('arrow').active = false
                 this.showCards()
                 this.setupBorderCardIdx()
 
@@ -217,7 +237,7 @@ cc.Class({
         for (var i = 0; i < this.layout.children.length; i++) {
             if (this.layout.children[i].val != null) {
                 // 无解
-                if (this.deadCycle()) { return State.DeadCycle }
+                if (this.deadCycle().length == 0) { return State.DeadCycle }
                 return State.Continue
             }
         }
@@ -225,14 +245,29 @@ cc.Class({
     },
 
     deadCycle: function () {
+        // 检查上下
         for (let i = 0; i < this.borderCardIdx.length - 1; i++) {
             for (let j = i + 1; j < this.borderCardIdx.length; j++) {
                 if (this.cards[this.borderCardIdx[i]] == this.cards[this.borderCardIdx[j]]) {
-                    return false
+                    return [this.borderCardIdx[i], this.borderCardIdx[j]]
                 }
             }
         }
-        return true
+        // 检查相邻
+        for (let i = 0; i < this.borderCardIdx.length; i++) {
+            let card = this.cards[this.borderCardIdx[i]]
+            let upCard = null
+            let downCard = null
+            if (this.borderCardIdx[i] - LineCount >= 0) { upCard = this.cards[this.borderCardIdx[i] - LineCount] }
+            if (this.borderCardIdx[i] + LineCount < this.cards.length) { downCard = this.cards[this.borderCardIdx[i] + LineCount] }
+            if (upCard && upCard == card) {
+                return [this.borderCardIdx[i] - LineCount, this.borderCardIdx[i]]
+            }
+            if (downCard && downCard == card) {
+                return [this.borderCardIdx[i], this.borderCardIdx[i] + LineCount]
+            }
+        }
+        return []
     },
 
     selectAction: function () {
@@ -297,6 +332,13 @@ cc.Class({
             }
         }
         return result
+    },
+
+    btnTip: function () {
+        let res = this.deadCycle()
+        if (res.length.length == 0) { return }
+        this.layout.children[res[0]].PathChild('arrow').active = true
+        this.layout.children[res[1]].PathChild('arrow').active = true
     },
 
     btnRestart: function () {
