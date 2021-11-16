@@ -4,6 +4,7 @@ cc.Class({
     properties: {
         pfbRoot: cc.Node,
         record: cc.Prefab,
+        bgm: cc.Prefab,
     },
 
     onLoad: function () {
@@ -24,7 +25,17 @@ cc.Class({
         }
     },
 
+    btnBGM: function () {
+        if (this.pfbCache['bgm']) {
+            this.pfbCache['bgm'].active = true
+        } else {
+            let recordPfb = cc.instantiate(this.bgm)
+            recordPfb.parent = this.pfbRoot
+            this.pfbCache['bgm'] = recordPfb
+        }
+    },
+
     btnExit: function () {
-        cc.director.end()
+        cc.game.end()
     },
 });

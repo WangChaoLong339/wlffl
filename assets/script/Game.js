@@ -303,6 +303,10 @@ cc.Class({
         this.startGame()
     },
 
+    btnClose: function () {
+        this.hideProp()
+    },
+
     btnReturn: function () {
         cc.director.loadScene('Main')
     },
