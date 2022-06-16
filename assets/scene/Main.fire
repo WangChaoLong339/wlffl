@@ -186,7 +186,7 @@
       "array": [
         0,
         0,
-        645.1889258194068,
+        643.2642409989613,
         0,
         0,
         0,
@@ -1853,14 +1853,14 @@
     "_id": "e3kdppadpIbY+T5fxonVmk"
   },
   {
-    "__type__": "8b6994zFgdA6a5zXx0+iWfj",
+    "__type__": "a1f72da8zdF4aVFSeP0IiZG",
     "_name": "",
     "_objFlags": 0,
     "node": {
       "__id__": 2
     },
     "_enabled": true,
-    "_id": "05SCL6JMpI6raAJEBMMXZ3"
+    "_id": "6dYdUmeu9Jj6HQ6nniAQWS"
   },
   {
     "__type__": "6d9b2Sd4xBHTaNhvvknGWnS",
@@ -1878,6 +1878,9 @@
     },
     "bgm": {
       "__uuid__": "41cc150e-f006-44b3-901b-c3ca24112f3e"
+    },
+    "game": {
+      "__uuid__": "622e88b0-eaf4-47bf-8a0b-06be3f813c12"
     },
     "_id": "cer+9/pGFJJIlpdCN4Y4mw"
   },

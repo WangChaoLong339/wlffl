@@ -1,4 +1,8 @@
+import { ut } from "../assets/script/util";
+
 declare global {
+
+    var ut: ut
 
     namespace cc {
         export interface Node {
@@ -7,12 +11,18 @@ declare global {
             // node active change to false
             onleave: Function,
 
-            PathChild: Function,
-            EachChild: Function,
+            PathChild(path: string, type?: any): cc.Node
+
+            val: any,
+            idx: number
         }
 
         export interface Color {
             VIOLET: cc.Color,
         }
+    }
+
+    interface Date {
+        Format(mask: string, utc?: boolean, gmt?: boolean): string
     }
 }

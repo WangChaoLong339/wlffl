@@ -5,6 +5,7 @@ cc.Class({
         pfbRoot: cc.Node,
         record: cc.Prefab,
         bgm: cc.Prefab,
+        game: cc.Prefab,
     },
 
     onLoad: function () {
@@ -12,7 +13,13 @@ cc.Class({
     },
 
     btnStart: function () {
-        cc.director.loadScene('Game')
+        if (this.pfbCache['game']) {
+            this.pfbCache['game'].active = true
+        } else {
+            let gamePfb = cc.instantiate(this.game)
+            gamePfb.parent = this.pfbRoot
+            this.pfbCache['game'] = gamePfb
+        }
     },
 
     btnRecord: function () {

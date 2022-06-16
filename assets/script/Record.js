@@ -11,7 +11,7 @@ cc.Class({
 
     onEnable: function () {
         this.scrollView.content.removeAllChildren()
-        let recordData = GetLocalStorage('wlffl-record') || []
+        let recordData = ut.GetLocalStorage('wlffl-record') || []
         recordData.sort((a, b) => { return a.consume - b.consume })
         for (let i = 0; i < recordData.length; i++) {
             let d = recordData[i]

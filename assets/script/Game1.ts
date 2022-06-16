@@ -4,46 +4,67 @@ const State = {
     GameOver: 2,
 }
 
+const CardType = ['w', 't', 's']
+
 const LineCount = 9
 
-cc.Class({
-    extends: cc.Component,
+const CountdownSecond = 3
 
-    properties: {
-        layout: cc.Node,
-        card: cc.Prefab,
-        particle: cc.Node,
-        prop: cc.Node,
-        startCd: cc.Node,
-        timer: cc.Node,
-    },
+const { ccclass, property } = cc._decorator;
 
-    onLoad: function () {
-        this.cardType = ['w', 't', 's']
+@ccclass
+export default class Game extends cc.Component {
+
+    @property(cc.Node)
+    content: cc.Node = null
+
+    @property(cc.Prefab)
+    cardItem: cc.Prefab = null
+
+    @property(cc.Node)
+    winParticle: cc.Node = null
+
+    @property(cc.Node)
+    prop: cc.Node = null
+
+    @property(cc.Node)
+    countdown: cc.Node = null
+
+    @property(cc.Node)
+    timer: cc.Node = null
+
+    cards: any
+    scaling: any
+    select: any
+    timerVal: any
+    borderCardIdx: any
+    onLoad() {
         this.setGameView()
         this.createCard()
         this.startGame()
+
+        //@ts-ignore
         window.aaa = this
-    },
+    }
 
-    setGameView: function () {
-        let gameViewWidth = this.layout.width
+    setGameView() {
+        let gameViewWidth = this.content.width
         let cardWidth = gameViewWidth / LineCount
-        this.scaling = cardWidth / this.card.data.width
-    },
+        this.scaling = cardWidth / this.cardItem.data.width
+    }
 
-    createCard: function () {
+    createCard() {
         this.cards = []
-        for (var i = 0; i < this.cardType.length; i++) {
+        for (var i = 0; i < CardType.length; i++) {
             for (var j = 1; j < 10; j++) {
                 for (var m = 0; m < 4; m++) {
-                    this.cards.push(this.cardType[i] + j)
+                    this.cards.push(`${CardType[i]}${j}`)
                 }
             }
         }
-    },
+    }
 
-    startGame: function () {
+    startGame() {
         this.select = []
         this.timerVal = 0
         this.hideProp()
@@ -51,31 +72,32 @@ cc.Class({
         this.createPrefab()
         this.hideCards()
 
-        this.startCd.getComponent(cc.Label).string = ''
-        this.startCd.stopAllActions()
-        this.startCd.runAction(cc.sequence(
-            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '3' }),
+        this.countdown.getComponent(cc.Label).string = ''
+        this.countdown.stopAllActions()
+
+        this.countdown.runAction(cc.sequence(
+            cc.callFunc(() => { this.countdown.getComponent(cc.Label).string = '3' }),
             cc.delayTime(1),
-            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '2' }),
+            cc.callFunc(() => { this.countdown.getComponent(cc.Label).string = '2' }),
             cc.delayTime(1),
-            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '1' }),
+            cc.callFunc(() => { this.countdown.getComponent(cc.Label).string = '1' }),
             cc.delayTime(1),
-            cc.callFunc(() => { this.startCd.getComponent(cc.Label).string = '0' }),
+            cc.callFunc(() => { this.countdown.getComponent(cc.Label).string = '0' }),
             cc.delayTime(1),
             cc.callFunc(() => {
-                this.startCd.getComponent(cc.Label).string = ''
+                this.countdown.getComponent(cc.Label).string = ''
                 this.runTimer()
                 this.showCards()
                 this.setupBorderCardIdx()
             }),
         ))
-    },
+    }
 
-    randomCards: function () {
+    randomCards() {
         for (var i = 0; i < this.cards.length; i++) {
-            let r = RandomInt(0, this.cards.length)
+            let r = ut.RandomInt(0, this.cards.length)
             if (i != r) {
-                let v = Clone(this.cards[i])
+                let v = ut.Clone(this.cards[i])
                 this.cards[i] = this.cards[r]
                 this.cards[r] = v
             }
@@ -95,98 +117,98 @@ cc.Class({
             's2', 's1', 's4', 's3', 's6', 's5', 's8', 's7', 's9',
             's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9',
         ]
-    },
+    }
 
-    createPrefab: function () {
-        this.layout.removeAllChildren()
+    createPrefab() {
+        this.content.removeAllChildren()
         for (var i = 0; i < this.cards.length; i++) {
-            let card = cc.instantiate(this.card)
+            let card = cc.instantiate(this.cardItem)
             card.PathChild('cardShow').active = false
             card.PathChild('cardHide').active = false
             card.val = this.cards[i]
             card.idx = i
             card.on(cc.Node.EventType.TOUCH_END, this.touchEnd.bind(this), this)
-            card.width = parseInt(card.width * this.scaling)
-            card.height = parseInt(card.height * this.scaling)
-            this.layout.addChild(card)
+            card.width = Math.floor(card.width * this.scaling)
+            card.height = Math.floor(card.height * this.scaling)
+            this.content.addChild(card)
         }
-    },
+    }
 
-    showProp: function () {
+    showProp() {
         this.prop.active = true
-    },
+    }
 
-    hideProp: function () {
+    hideProp() {
         this.prop.active = false
-    },
+    }
 
-    hideCards: function () {
-        for (var i = 0; i < this.layout.children.length; i++) {
-            let card = this.layout.children[i]
+    hideCards() {
+        for (var i = 0; i < this.content.children.length; i++) {
+            let card = this.content.children[i]
             card.PathChild('cardHide').active = true
             card.PathChild('cardShow').active = false
         }
-    },
+    }
 
-    runTimer: function () {
+    runTimer() {
         this.timer.getComponent(cc.Label).string = `${this.timerVal}s`
         this.timer.stopAllActions()
         this.timer.runAction(cc.sequence(
             cc.delayTime(1),
             cc.callFunc(() => { this.timerVal++; this.runTimer() }),
         ))
-    },
+    }
 
-    stopTimer: function () {
+    stopTimer() {
         this.timer.stopAllActions()
-    },
+    }
 
-    showCards: function () {
-        for (var i = 0; i < this.layout.children.length; i++) {
-            let card = this.layout.children[i]
+    showCards() {
+        for (var i = 0; i < this.content.children.length; i++) {
+            let card = this.content.children[i]
             card.PathChild('cardHide').active = false
             if (card.val == null) {
                 card.PathChild('cardShow').active = false
             } else {
-                SetSpriteFrame(`val/${card.val}`, card.PathChild('cardShow/val', cc.Sprite))
+                ut.SetSpriteFrame(`val/${card.val}`, card.PathChild('cardShow/val', cc.Sprite))
                 card.PathChild('arrow').active = false
                 card.PathChild('cardShow').active = true
             }
         }
-    },
+    }
 
-    setupBorderCardIdx: function () {
+    setupBorderCardIdx() {
         this.borderCardIdx = []
         for (let i = 0; i < LineCount; i++) {
             // 上边界
-            for (let m = i; m < this.layout.children.length; m += LineCount) {
-                let card = this.layout.children[m]
+            for (let m = i; m < this.content.children.length; m += LineCount) {
+                let card = this.content.children[m]
                 if (card.val != null && this.borderCardIdx.indexOf(card.idx) == -1) {
                     this.borderCardIdx.push(card.idx)
                     break
                 }
             }
             // 下边界
-            for (let n = this.layout.children.length - LineCount + i; n >= 0; n -= LineCount) {
-                let card = this.layout.children[n]
+            for (let n = this.content.children.length - LineCount + i; n >= 0; n -= LineCount) {
+                let card = this.content.children[n]
                 if (card.val != null && this.borderCardIdx.indexOf(card.idx) == -1) {
                     this.borderCardIdx.push(card.idx)
                     break
                 }
             }
         }
-    },
+    }
 
-    touchEnd: function (event) {
+    touchEnd(event) {
         // 是空白牌 || 已经选中
-        if (this.layout.children[event.target.idx].val == null || this.select.indexOf(event.target.idx) != -1) {
+        if (this.content.children[event.target.idx].val == null || this.select.indexOf(event.target.idx) != -1) {
             return
         }
         this.select.push(event.target.idx)
         if (this.select.length == 2) {
             if (this.check()) {
-                let card0 = this.layout.children[this.select[0]]
-                let card1 = this.layout.children[this.select[1]]
+                let card0 = this.content.children[this.select[0]]
+                let card1 = this.content.children[this.select[1]]
                 card0.val = null
                 card1.val = null
                 card0.PathChild('arrow').active = false
@@ -198,10 +220,10 @@ cc.Class({
                     case State.GameOver:
                         this.stopTimer()
                         this.cacheResult()
-                        this.particle.active = true
+                        this.winParticle.active = true
                         this.node.runAction(cc.sequence(
                             cc.delayTime(5),
-                            cc.callFunc(() => { this.particle.active = false; this.startGame() }),
+                            cc.callFunc(() => { this.winParticle.active = false; this.startGame() }),
                         ))
                         return
                     case State.DeadCycle:
@@ -215,17 +237,17 @@ cc.Class({
             this.select = []
         }
         this.selectAction()
-    },
+    }
 
-    cacheResult: function () {
-        let recordData = GetLocalStorage('wlffl-record') || []
+    cacheResult() {
+        let recordData = ut.GetLocalStorage('wlffl-record') || []
         recordData.push({ consume: this.timerVal, date: new Date().Format('yyyy-mm-dd') })
         recordData.sort((a, b) => { return a.consume - b.consume })
         while (recordData.length > 30) {
             recordData.pop()
         }
-        SetLocalStorage('wlffl-record', recordData)
-    },
+        ut.SetLocalStorage('wlffl-record', recordData)
+    }
 
     /**
      * @returns State
@@ -233,18 +255,18 @@ cc.Class({
      * 1: 还有牌
      * 2: 结束
      */
-    gameOver: function () {
-        for (var i = 0; i < this.layout.children.length; i++) {
-            if (this.layout.children[i].val != null) {
+    gameOver() {
+        for (var i = 0; i < this.content.children.length; i++) {
+            if (this.content.children[i].val != null) {
                 // 无解
                 if (this.deadCycle().length == 0) { return State.DeadCycle }
                 return State.Continue
             }
         }
         return State.GameOver
-    },
+    }
 
-    deadCycle: function () {
+    deadCycle() {
         // 检查上下
         for (let i = 0; i < this.borderCardIdx.length - 1; i++) {
             for (let j = i + 1; j < this.borderCardIdx.length; j++) {
@@ -268,21 +290,21 @@ cc.Class({
             }
         }
         return []
-    },
+    }
 
-    selectAction: function () {
+    selectAction() {
         for (var i = 0; i < this.select.length; i++) {
-            let node = this.layout.children[this.select[i]].PathChild('cardShow')
+            let node = this.content.children[this.select[i]].PathChild('cardShow')
             node.runAction(cc.sequence(
                 cc.fadeOut(0.4),
                 cc.fadeIn(0.4),
             ).repeat(5))
         }
-    },
+    }
 
-    errAction: function () {
+    errAction() {
         for (var i = 0; i < this.select.length; i++) {
-            let node = this.layout.children[this.select[i]].PathChild('cardShow')
+            let node = this.content.children[this.select[i]].PathChild('cardShow')
             node.stopAllActions()
             node.opacity = 255
             node.runAction(cc.sequence(
@@ -290,11 +312,11 @@ cc.Class({
                 cc.moveBy(0.1, 3, 0),
             ).repeat(5))
         }
-    },
+    }
 
-    check: function () {
-        let select0 = this.layout.children[this.select[0]]
-        let select1 = this.layout.children[this.select[1]]
+    check() {
+        let select0 = this.content.children[this.select[0]]
+        let select1 = this.content.children[this.select[1]]
         // 点击了不同的牌
         if (select0.val != select1.val) {
             return false
@@ -308,48 +330,48 @@ cc.Class({
             return true
         }
         return false
-    },
+    }
 
     // 检查上面是否通畅
-    checkUp: function (idx) {
+    checkUp(idx) {
         let result = true
         for (let i = idx - LineCount; i >= 0; i -= LineCount) {
-            if (this.layout.children[i] && this.layout.children[i].val != null) {
+            if (this.content.children[i] && this.content.children[i].val != null) {
                 result = false
                 break
             }
         }
         return result
-    },
+    }
 
     // 检查下面是否通畅
-    checkDown: function (idx) {
+    checkDown(idx) {
         let result = true
-        for (let i = idx + LineCount; i < this.layout.children.length; i += LineCount) {
-            if (this.layout.children[i] && this.layout.children[i].val != null) {
+        for (let i = idx + LineCount; i < this.content.children.length; i += LineCount) {
+            if (this.content.children[i] && this.content.children[i].val != null) {
                 result = false
                 break
             }
         }
         return result
-    },
+    }
 
-    btnTip: function () {
+    btnTip() {
         let res = this.deadCycle()
-        if (res.length.length == 0) { return }
-        this.layout.children[res[0]].PathChild('arrow').active = true
-        this.layout.children[res[1]].PathChild('arrow').active = true
-    },
+        if (res.length == 0) { return }
+        this.content.children[res[0]].PathChild('arrow').active = true
+        this.content.children[res[1]].PathChild('arrow').active = true
+    }
 
-    btnRestart: function () {
+    btnRestart() {
         this.startGame()
-    },
+    }
 
-    btnClose: function () {
+    btnClose() {
         this.hideProp()
-    },
+    }
 
-    btnReturn: function () {
+    btnReturn() {
         cc.director.loadScene('Main')
-    },
-});
+    }
+}
